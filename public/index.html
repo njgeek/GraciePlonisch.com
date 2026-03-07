@@ -1272,18 +1272,11 @@
       setTimeout(() => nameHeading.classList.remove('glitch'), 500);
     }
 
-    function scheduleGlitch() {
-      const delay = 4000 + Math.random() * 6000;
-      setTimeout(() => {
-        triggerGlitch();
-        scheduleGlitch();
-      }, delay);
-    }
-    scheduleGlitch();
-
-    // Glitch on hover (desktop) or tap (mobile)
+    // Glitch on hover (desktop) or tap anywhere (mobile, once)
     nameHeading.addEventListener('mouseenter', triggerGlitch);
-    nameHeading.addEventListener('touchstart', triggerGlitch, { passive: true });
+    if (isTouchDevice) {
+      document.addEventListener('touchstart', () => triggerGlitch(), { passive: true, once: true });
+    }
 
     // ==========================================
     // 6. COUNTDOWN (fetches launch date from server)
