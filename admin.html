@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin | Mailing List</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-primary: #07080a;
+      --bg-secondary: #0d0f14;
+      --bg-card: #111318;
+      --accent: #6c63ff;
+      --accent-2: #00d4ff;
+      --accent-3: #ff6cf0;
+      --text-primary: #f0f0f5;
+      --text-secondary: #6b7280;
+      --glass: rgba(255, 255, 255, 0.03);
+      --glass-border: rgba(255, 255, 255, 0.06);
+      --danger: #ff4d6a;
+      --success: #00ffa3;
+    }
+
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Ambient background glow */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -200px;
+      left: -200px;
+      width: 600px;
+      height: 600px;
+      background: var(--accent);
+      border-radius: 50%;
+      filter: blur(200px);
+      opacity: 0.08;
+      animation: ambientDrift 25s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      bottom: -200px;
+      right: -200px;
+      width: 500px;
+      height: 500px;
+      background: var(--accent-2);
+      border-radius: 50%;
+      filter: blur(200px);
+      opacity: 0.06;
+      animation: ambientDrift 20s ease-in-out infinite reverse;
+      pointer-events: none;
+    }
+
+    @keyframes ambientDrift {
+      0%, 100% { transform: translate(0, 0); }
+      33% { transform: translate(60px, 40px); }
+      66% { transform: translate(-40px, 60px); }
+    }
+
+    /* Page load animation */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(25px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes slideInLeft {
+      from { opacity: 0; transform: translateX(-20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes countUp {
+      from { opacity: 0; transform: scale(0.5); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    @keyframes borderGlow {
+      0%, 100% { border-color: var(--glass-border); }
+      50% { border-color: rgba(108, 99, 255, 0.2); }
+    }
+
+    @keyframes rowSlideIn {
+      from { opacity: 0; transform: translateX(-10px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    /* Top nav */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.2rem 2rem;
+      border-bottom: 1px solid var(--glass-border);
+      backdrop-filter: blur(20px);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(7, 8, 10, 0.85);
+      animation: fadeInDown 0.6s ease-out both;
+    }
+
+    .topbar .logo {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .topbar .logo .accent {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .topbar .badge {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      padding: 4px 12px;
+      border-radius: 100px;
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      color: var(--text-secondary);
+    }
+
+    .back-link {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.3s ease;
+    }
+
+    .back-link:hover {
+      color: var(--accent-2);
+    }
+
+    /* Main layout */
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    /* Stats row */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 1.2rem 1.5rem;
+      animation: fadeInUp 0.6s ease-out both;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
+      animation: shimmer 3s ease-in-out infinite;
+    }
+
+    .stat-card:nth-child(1) { animation-delay: 0.1s; }
+    .stat-card:nth-child(2) { animation-delay: 0.2s; }
+    .stat-card:nth-child(3) { animation-delay: 0.3s; }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(108, 99, 255, 0.2);
+      box-shadow: 0 15px 40px rgba(108, 99, 255, 0.1);
+    }
+
+    .stat-card .stat-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .stat-card .stat-value {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--text-primary), var(--accent-2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: countUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      animation: fadeInUp 0.6s ease-out 0.4s both;
+    }
+
+    .toolbar h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .search-input {
+      padding: 8px 14px;
+      border: 1px solid var(--glass-border);
+      border-radius: 10px;
+      background: var(--glass);
+      color: var(--text-primary);
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.85rem;
+      outline: none;
+      width: 220px;
+      transition: border-color 0.3s ease;
+    }
+
+    .search-input::placeholder {
+      color: rgba(255, 255, 255, 0.2);
+    }
+
+    .search-input:focus {
+      border-color: var(--accent);
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 10px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: white;
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 8px 20px rgba(108, 99, 255, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .btn-danger {
+      background: rgba(255, 77, 106, 0.1);
+      color: var(--danger);
+      border: 1px solid rgba(255, 77, 106, 0.2);
+    }
+
+    .btn-danger:hover {
+      background: rgba(255, 77, 106, 0.2);
+    }
+
+    .btn-ghost {
+      background: var(--glass);
+      color: var(--text-secondary);
+      border: 1px solid var(--glass-border);
+    }
+
+    .btn-ghost:hover {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    /* Table */
+    .table-wrap {
+      background: var(--bg-card);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      overflow: hidden;
+      animation: fadeInUp 0.6s ease-out 0.5s both, borderGlow 4s ease-in-out infinite 1s;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      text-align: left;
+      padding: 14px 20px;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--glass-border);
+      font-weight: 500;
+    }
+
+    thead th.check-col {
+      width: 40px;
+    }
+
+    tbody tr {
+      transition: all 0.3s ease;
+      animation: rowSlideIn 0.4s ease-out both;
+    }
+
+    tbody tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+      transform: scale(1.005);
+    }
+
+    tbody td {
+      padding: 14px 20px;
+      font-size: 0.9rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .subscriber-name {
+      font-weight: 500;
+    }
+
+    .subscriber-email {
+      color: var(--accent-2);
+    }
+
+    .subscriber-date {
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+    }
+
+    .delete-btn {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+    }
+
+    .delete-btn:hover {
+      color: var(--danger);
+      background: rgba(255, 77, 106, 0.1);
+    }
+
+    input[type="checkbox"] {
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border: 1px solid var(--glass-border);
+      border-radius: 4px;
+      background: var(--glass);
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+
+    input[type="checkbox"]:checked {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    input[type="checkbox"]:checked::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 5px;
+      width: 4px;
+      height: 8px;
+      border: solid white;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--text-secondary);
+    }
+
+    .empty-state svg {
+      margin-bottom: 1rem;
+      opacity: 0.3;
+    }
+
+    .empty-state h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+    }
+
+    /* Toast notification */
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      padding: 12px 20px;
+      border-radius: 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--glass-border);
+      color: var(--text-primary);
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transform: translateY(100px) scale(0.9);
+      opacity: 0;
+      transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 100;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .toast.show {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+
+    .toast .toast-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--success);
+    }
+
+    @media (max-width: 600px) {
+      .container { padding: 1rem; }
+      .topbar { padding: 1rem; }
+      .search-input { width: 140px; }
+      thead th, tbody td { padding: 10px 12px; }
+      .stats { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="logo">
+      <span class="accent">GP</span>
+      <span>Admin</span>
+      <span class="badge">Mailing List</span>
+    </div>
+    <a href="index.html" class="back-link">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Back to site
+    </a>
+  </div>
+
+  <div class="container">
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-label">Total Subscribers</div>
+        <div class="stat-value" id="totalCount">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">This Week</div>
+        <div class="stat-value" id="weekCount">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Today</div>
+        <div class="stat-value" id="todayCount">0</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <h2>Subscribers</h2>
+      <div class="toolbar-actions">
+        <input type="text" class="search-input" id="searchInput" placeholder="Search by name or email..." oninput="renderTable()">
+        <button class="btn btn-danger" id="deleteSelected" onclick="deleteSelected()" style="display:none">Delete Selected</button>
+        <button class="btn btn-ghost" onclick="exportCSV()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          Export CSV
+        </button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="check-col"><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Signed Up</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+      <div class="empty-state" id="emptyState" style="display:none">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        <h3>No subscribers yet</h3>
+        <p>They'll show up here once people sign up on the coming soon page.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">
+    <span class="toast-dot"></span>
+    <span id="toastMsg"></span>
+  </div>
+
+  <script>
+    let selected = new Set();
+
+    function getSubscribers() {
+      return JSON.parse(localStorage.getItem('gp_subscribers') || '[]');
+    }
+
+    function saveSubscribers(subs) {
+      localStorage.setItem('gp_subscribers', JSON.stringify(subs));
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    function formatDate(iso) {
+      const d = new Date(iso);
+      const now = new Date();
+      const diff = now - d;
+      const mins = Math.floor(diff / 60000);
+      const hours = Math.floor(diff / 3600000);
+      const days = Math.floor(diff / 86400000);
+
+      if (mins < 1) return 'Just now';
+      if (mins < 60) return `${mins}m ago`;
+      if (hours < 24) return `${hours}h ago`;
+      if (days < 7) return `${days}d ago`;
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function animateNumber(el, target) {
+      const current = parseInt(el.textContent) || 0;
+      if (current === target) return;
+      const duration = 800;
+      const start = performance.now();
+      function tick(now) {
+        const progress = Math.min((now - start) / duration, 1);
+        const ease = 1 - Math.pow(1 - progress, 3);
+        el.textContent = Math.round(current + (target - current) * ease);
+        if (progress < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    }
+
+    function updateStats() {
+      const subs = getSubscribers();
+      const now = new Date();
+      const weekAgo = new Date(now - 7 * 86400000);
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+      animateNumber(document.getElementById('totalCount'), subs.length);
+      animateNumber(document.getElementById('weekCount'), subs.filter(s => new Date(s.date) >= weekAgo).length);
+      animateNumber(document.getElementById('todayCount'), subs.filter(s => new Date(s.date) >= todayStart).length);
+    }
+
+    function renderTable() {
+      const subs = getSubscribers();
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      const filtered = subs.filter(s =>
+        s.name.toLowerCase().includes(query) || s.email.toLowerCase().includes(query)
+      );
+
+      const tbody = document.getElementById('tableBody');
+      const empty = document.getElementById('emptyState');
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+      }
+
+      empty.style.display = 'none';
+
+      // Sort newest first
+      filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      tbody.innerHTML = filtered.map((s, i) => `
+        <tr style="animation-delay: ${i * 0.05}s">
+          <td><input type="checkbox" data-email="${s.email}" ${selected.has(s.email) ? 'checked' : ''} onchange="toggleSelect('${s.email}')"></td>
+          <td class="subscriber-name">${escapeHtml(s.name)}</td>
+          <td class="subscriber-email">${escapeHtml(s.email)}</td>
+          <td class="subscriber-date">${formatDate(s.date)}</td>
+          <td>
+            <button class="delete-btn" onclick="deleteSingle('${escapeHtml(s.email)}')" title="Remove">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+
+      updateDeleteBtn();
+      updateStats();
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function toggleSelect(email) {
+      if (selected.has(email)) selected.delete(email);
+      else selected.add(email);
+      updateDeleteBtn();
+    }
+
+    function toggleSelectAll() {
+      const all = document.getElementById('selectAll').checked;
+      const subs = getSubscribers();
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      const filtered = subs.filter(s =>
+        s.name.toLowerCase().includes(query) || s.email.toLowerCase().includes(query)
+      );
+
+      if (all) {
+        filtered.forEach(s => selected.add(s.email));
+      } else {
+        selected.clear();
+      }
+      renderTable();
+    }
+
+    function updateDeleteBtn() {
+      document.getElementById('deleteSelected').style.display = selected.size > 0 ? 'inline-flex' : 'none';
+    }
+
+    function deleteSingle(email) {
+      if (!confirm(`Remove this subscriber?`)) return;
+      let subs = getSubscribers();
+      subs = subs.filter(s => s.email !== email);
+      saveSubscribers(subs);
+      selected.delete(email);
+      renderTable();
+      showToast('Subscriber removed');
+    }
+
+    function deleteSelected() {
+      if (!confirm(`Remove ${selected.size} subscriber(s)?`)) return;
+      let subs = getSubscribers();
+      subs = subs.filter(s => !selected.has(s.email));
+      saveSubscribers(subs);
+      selected.clear();
+      document.getElementById('selectAll').checked = false;
+      renderTable();
+      showToast('Subscribers removed');
+    }
+
+    function exportCSV() {
+      const subs = getSubscribers();
+      if (subs.length === 0) {
+        showToast('No subscribers to export');
+        return;
+      }
+
+      const header = 'Name,Email,Signed Up\n';
+      const rows = subs.map(s =>
+        `"${s.name.replace(/"/g, '""')}","${s.email}","${new Date(s.date).toLocaleString()}"`
+      ).join('\n');
+
+      const blob = new Blob([header + rows], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `gracieplonisch-subscribers-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('CSV exported');
+    }
+
+    // Initial render
+    renderTable();
+    updateStats();
+
+    // Auto-refresh every 5 seconds to pick up new signups
+    setInterval(() => {
+      renderTable();
+      updateStats();
+    }, 5000);
+  </script>
+</body>
+</html>
