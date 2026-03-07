@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#07080a"/>
+      <stop offset="100%" style="stop-color:#0d0f14"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6c63ff"/>
+      <stop offset="50%" style="stop-color:#00d4ff"/>
+      <stop offset="100%" style="stop-color:#ff6cf0"/>
+    </linearGradient>
+    <radialGradient id="glow1" cx="20%" cy="30%" r="40%">
+      <stop offset="0%" style="stop-color:#6c63ff;stop-opacity:0.3"/>
+      <stop offset="100%" style="stop-color:#6c63ff;stop-opacity:0"/>
+    </radialGradient>
+    <radialGradient id="glow2" cx="80%" cy="70%" r="40%">
+      <stop offset="0%" style="stop-color:#00d4ff;stop-opacity:0.2"/>
+      <stop offset="100%" style="stop-color:#00d4ff;stop-opacity:0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow1)"/>
+  <rect width="1200" height="630" fill="url(#glow2)"/>
+  <text x="600" y="250" font-family="Arial,Helvetica,sans-serif" font-weight="bold" font-size="100" fill="white" text-anchor="middle" opacity="0.95">Gracie</text>
+  <text x="600" y="370" font-family="Arial,Helvetica,sans-serif" font-weight="bold" font-size="100" fill="url(#accent)" text-anchor="middle">Plonisch</text>
+  <rect x="540" y="400" width="120" height="2" fill="url(#accent)" opacity="0.6" rx="1"/>
+  <text x="600" y="460" font-family="Arial,Helvetica,sans-serif" font-weight="300" font-size="28" fill="#6b7280" text-anchor="middle" letter-spacing="8">COMING SOON</text>
+</svg>

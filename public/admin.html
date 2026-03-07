@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin | Mailing List</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <meta name="theme-color" content="#07080a">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -794,50 +796,51 @@
 
   <script>
     // --- Authentication ---
-    // SHA-256 hash of the admin password (default: "GracieAdmin2026!")
-    const ADMIN_HASH = '8b2c3f1a6d4e5f7890abcdef1234567890abcdef1234567890abcdef12345678';
+    let authToken = sessionStorage.getItem('gp_admin_token') || '';
 
-    async function hashPassword(pw) {
-      const enc = new TextEncoder().encode(pw);
-      const buf = await crypto.subtle.digest('SHA-256', enc);
-      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    function apiHeaders() {
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + authToken,
+      };
     }
-
-    // Set the real hash on first load (self-configuring)
-    (async () => {
-      const storedHash = localStorage.getItem('gp_admin_hash');
-      if (!storedHash) {
-        const defaultHash = await hashPassword('GracieAdmin2026!');
-        localStorage.setItem('gp_admin_hash', defaultHash);
-      }
-    })();
 
     async function handleLogin(e) {
       e.preventDefault();
       const pw = document.getElementById('loginPassword').value;
-      const hash = await hashPassword(pw);
-      const storedHash = localStorage.getItem('gp_admin_hash');
 
-      if (hash === storedHash) {
-        sessionStorage.setItem('gp_admin_auth', 'true');
-        document.getElementById('loginScreen').classList.add('hidden');
-        document.getElementById('adminContent').classList.add('unlocked');
-        renderTable();
-        updateStats();
-      } else {
-        const card = document.getElementById('loginCard');
-        const err = document.getElementById('loginError');
-        card.classList.remove('shake');
-        void card.offsetWidth; // trigger reflow
-        card.classList.add('shake');
-        err.classList.add('show');
-        document.getElementById('loginPassword').value = '';
-        document.getElementById('loginPassword').focus();
+      try {
+        const res = await fetch('/api/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: pw }),
+        });
+        const data = await res.json();
+
+        if (res.ok && data.token) {
+          authToken = data.token;
+          sessionStorage.setItem('gp_admin_token', authToken);
+          document.getElementById('loginScreen').classList.add('hidden');
+          document.getElementById('adminContent').classList.add('unlocked');
+          loadData();
+        } else {
+          const card = document.getElementById('loginCard');
+          const err = document.getElementById('loginError');
+          card.classList.remove('shake');
+          void card.offsetWidth;
+          card.classList.add('shake');
+          err.classList.add('show');
+          document.getElementById('loginPassword').value = '';
+          document.getElementById('loginPassword').focus();
+        }
+      } catch (err) {
+        console.error('Auth error:', err);
       }
     }
 
     function logout() {
-      sessionStorage.removeItem('gp_admin_auth');
+      authToken = '';
+      sessionStorage.removeItem('gp_admin_token');
       document.getElementById('adminContent').classList.remove('unlocked');
       document.getElementById('loginScreen').classList.remove('hidden');
       document.getElementById('loginPassword').value = '';
@@ -845,20 +848,13 @@
     }
 
     // Check if already authenticated this session
-    if (sessionStorage.getItem('gp_admin_auth') === 'true') {
+    if (authToken) {
       document.getElementById('loginScreen').classList.add('hidden');
       document.getElementById('adminContent').classList.add('unlocked');
     }
 
     let selected = new Set();
-
-    function getSubscribers() {
-      return JSON.parse(localStorage.getItem('gp_subscribers') || '[]');
-    }
-
-    function saveSubscribers(subs) {
-      localStorage.setItem('gp_subscribers', JSON.stringify(subs));
-    }
+    let subscribers = [];
 
     function showToast(msg) {
       const toast = document.getElementById('toast');
@@ -896,21 +892,33 @@
       requestAnimationFrame(tick);
     }
 
-    function updateStats() {
-      const subs = getSubscribers();
-      const now = new Date();
-      const weekAgo = new Date(now - 7 * 86400000);
-      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    async function updateStats() {
+      try {
+        const res = await fetch('/api/stats', { headers: apiHeaders() });
+        if (res.status === 401) { logout(); return; }
+        const data = await res.json();
+        animateNumber(document.getElementById('totalCount'), data.total);
+        animateNumber(document.getElementById('weekCount'), data.week);
+        animateNumber(document.getElementById('todayCount'), data.today);
+      } catch (err) {
+        console.error('Stats error:', err);
+      }
+    }
 
-      animateNumber(document.getElementById('totalCount'), subs.length);
-      animateNumber(document.getElementById('weekCount'), subs.filter(s => new Date(s.date) >= weekAgo).length);
-      animateNumber(document.getElementById('todayCount'), subs.filter(s => new Date(s.date) >= todayStart).length);
+    async function fetchSubscribers() {
+      try {
+        const res = await fetch('/api/subscribers', { headers: apiHeaders() });
+        if (res.status === 401) { logout(); return; }
+        const data = await res.json();
+        subscribers = data.subscribers || [];
+      } catch (err) {
+        console.error('Fetch error:', err);
+      }
     }
 
     function renderTable() {
-      const subs = getSubscribers();
       const query = document.getElementById('searchInput').value.toLowerCase();
-      const filtered = subs.filter(s =>
+      const filtered = subscribers.filter(s =>
         s.name.toLowerCase().includes(query) || s.email.toLowerCase().includes(query)
       );
 
@@ -925,17 +933,14 @@
 
       empty.style.display = 'none';
 
-      // Sort newest first
-      filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
-
       tbody.innerHTML = filtered.map((s, i) => `
         <tr style="animation-delay: ${i * 0.05}s">
-          <td><input type="checkbox" data-email="${s.email}" ${selected.has(s.email) ? 'checked' : ''} onchange="toggleSelect('${s.email}')"></td>
+          <td><input type="checkbox" data-id="${s.id}" ${selected.has(s.id) ? 'checked' : ''} onchange="toggleSelect(${s.id})"></td>
           <td class="subscriber-name">${escapeHtml(s.name)}</td>
           <td class="subscriber-email">${escapeHtml(s.email)}</td>
-          <td class="subscriber-date">${formatDate(s.date)}</td>
+          <td class="subscriber-date">${formatDate(s.created_at)}</td>
           <td>
-            <button class="delete-btn" onclick="deleteSingle('${escapeHtml(s.email)}')" title="Remove">
+            <button class="delete-btn" onclick="deleteSingle(${s.id})" title="Remove">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
             </button>
           </td>
@@ -943,7 +948,6 @@
       `).join('');
 
       updateDeleteBtn();
-      updateStats();
     }
 
     function escapeHtml(str) {
@@ -952,22 +956,21 @@
       return div.innerHTML;
     }
 
-    function toggleSelect(email) {
-      if (selected.has(email)) selected.delete(email);
-      else selected.add(email);
+    function toggleSelect(id) {
+      if (selected.has(id)) selected.delete(id);
+      else selected.add(id);
       updateDeleteBtn();
     }
 
     function toggleSelectAll() {
       const all = document.getElementById('selectAll').checked;
-      const subs = getSubscribers();
       const query = document.getElementById('searchInput').value.toLowerCase();
-      const filtered = subs.filter(s =>
+      const filtered = subscribers.filter(s =>
         s.name.toLowerCase().includes(query) || s.email.toLowerCase().includes(query)
       );
 
       if (all) {
-        filtered.forEach(s => selected.add(s.email));
+        filtered.forEach(s => selected.add(s.id));
       } else {
         selected.clear();
       }
@@ -978,37 +981,44 @@
       document.getElementById('deleteSelected').style.display = selected.size > 0 ? 'inline-flex' : 'none';
     }
 
-    function deleteSingle(email) {
-      if (!confirm(`Remove this subscriber?`)) return;
-      let subs = getSubscribers();
-      subs = subs.filter(s => s.email !== email);
-      saveSubscribers(subs);
-      selected.delete(email);
-      renderTable();
-      showToast('Subscriber removed');
+    async function deleteSingle(id) {
+      if (!confirm('Remove this subscriber?')) return;
+      try {
+        await fetch(`/api/subscribers/${id}`, { method: 'DELETE', headers: apiHeaders() });
+        selected.delete(id);
+        await loadData();
+        showToast('Subscriber removed');
+      } catch (err) {
+        console.error('Delete error:', err);
+      }
     }
 
-    function deleteSelected() {
+    async function deleteSelected() {
       if (!confirm(`Remove ${selected.size} subscriber(s)?`)) return;
-      let subs = getSubscribers();
-      subs = subs.filter(s => !selected.has(s.email));
-      saveSubscribers(subs);
-      selected.clear();
-      document.getElementById('selectAll').checked = false;
-      renderTable();
-      showToast('Subscribers removed');
+      try {
+        await fetch('/api/subscribers', {
+          method: 'DELETE',
+          headers: apiHeaders(),
+          body: JSON.stringify({ ids: Array.from(selected) }),
+        });
+        selected.clear();
+        document.getElementById('selectAll').checked = false;
+        await loadData();
+        showToast('Subscribers removed');
+      } catch (err) {
+        console.error('Bulk delete error:', err);
+      }
     }
 
     function exportCSV() {
-      const subs = getSubscribers();
-      if (subs.length === 0) {
+      if (subscribers.length === 0) {
         showToast('No subscribers to export');
         return;
       }
 
       const header = 'Name,Email,Signed Up\n';
-      const rows = subs.map(s =>
-        `"${s.name.replace(/"/g, '""')}","${s.email}","${new Date(s.date).toLocaleString()}"`
+      const rows = subscribers.map(s =>
+        `"${s.name.replace(/"/g, '""')}","${s.email}","${new Date(s.created_at).toLocaleString()}"`
       ).join('\n');
 
       const blob = new Blob([header + rows], { type: 'text/csv' });
@@ -1021,19 +1031,19 @@
       showToast('CSV exported');
     }
 
-    // Initial render (only if already authenticated)
-    if (sessionStorage.getItem('gp_admin_auth') === 'true') {
+    async function loadData() {
+      await fetchSubscribers();
       renderTable();
       updateStats();
     }
 
-    // Auto-refresh every 5 seconds to pick up new signups
+    // Initial load (only if authenticated)
+    if (authToken) loadData();
+
+    // Auto-refresh every 10 seconds
     setInterval(() => {
-      if (sessionStorage.getItem('gp_admin_auth') === 'true') {
-        renderTable();
-        updateStats();
-      }
-    }, 5000);
+      if (authToken) loadData();
+    }, 10000);
   </script>
 </body>
 </html>
