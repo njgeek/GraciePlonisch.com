@@ -21,6 +21,12 @@ async function initDb() {
       created_at TIMESTAMPTZ DEFAULT NOW()
     )
   `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS settings (
+      key VARCHAR(255) PRIMARY KEY,
+      value TEXT NOT NULL
+    )
+  `);
   console.log('Database initialized');
 }
 
@@ -146,6 +152,35 @@ const server = http.createServer(async (req, res) => {
       });
     } catch (err) {
       console.error('Stats error:', err);
+      return json(res, 500, { error: 'Server error' });
+    }
+  }
+
+  // GET /api/settings/launch-date — public (needed by countdown)
+  if (req.method === 'GET' && url.pathname === '/api/settings/launch-date') {
+    try {
+      const { rows } = await pool.query("SELECT value FROM settings WHERE key = 'launch_date'");
+      const date = rows.length ? rows[0].value : null;
+      return json(res, 200, { date });
+    } catch (err) {
+      console.error('Settings error:', err);
+      return json(res, 500, { error: 'Server error' });
+    }
+  }
+
+  // PUT /api/settings/launch-date — admin only
+  if (req.method === 'PUT' && url.pathname === '/api/settings/launch-date') {
+    if (!checkAdmin(req)) return json(res, 401, { error: 'Unauthorized' });
+    try {
+      const { date } = await readBody(req);
+      if (!date) return json(res, 400, { error: 'Date required' });
+      await pool.query(
+        "INSERT INTO settings (key, value) VALUES ('launch_date', $1) ON CONFLICT (key) DO UPDATE SET value = $1",
+        [date]
+      );
+      return json(res, 200, { success: true, date });
+    } catch (err) {
+      console.error('Settings update error:', err);
       return json(res, 500, { error: 'Server error' });
     }
   }

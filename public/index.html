@@ -1277,14 +1277,30 @@
     nameHeading.addEventListener('touchstart', triggerGlitch, { passive: true });
 
     // ==========================================
-    // 6. COUNTDOWN
+    // 6. COUNTDOWN (fetches launch date from server)
     // ==========================================
-    const launchDate = new Date();
-    launchDate.setDate(launchDate.getDate() + 30);
+    let launchDate = new Date();
+    launchDate.setDate(launchDate.getDate() + 30); // fallback
+
+    // Fetch the real launch date from the server
+    fetch('/api/settings/launch-date')
+      .then(r => r.json())
+      .then(data => {
+        if (data.date) launchDate = new Date(data.date);
+      })
+      .catch(() => {});
 
     function updateCountdown() {
       const now = new Date();
       const diff = launchDate - now;
+
+      if (diff <= 0) {
+        document.getElementById('days').textContent = '00';
+        document.getElementById('hours').textContent = '00';
+        document.getElementById('minutes').textContent = '00';
+        document.getElementById('seconds').textContent = '00';
+        return;
+      }
 
       const days = Math.floor(diff / (1000 * 60 * 60 * 24));
       const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
