@@ -685,12 +685,64 @@
       border-color: rgba(255, 77, 106, 0.3);
     }
 
-    @media (max-width: 600px) {
-      .container { padding: 1rem; }
-      .topbar { padding: 1rem; }
-      .search-input { width: 140px; }
-      thead th, tbody td { padding: 10px 12px; }
-      .stats { grid-template-columns: 1fr 1fr; }
+    @media (max-width: 768px) {
+      .container { padding: 0.75rem; }
+      .topbar { padding: 0.75rem 1rem; }
+      .topbar .logo { font-size: 1rem; }
+      .topbar .badge { display: none; }
+
+      .stats { grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; }
+      .stat-card { padding: 0.8rem 1rem; }
+      .stat-card .stat-value { font-size: 1.5rem; }
+      .stat-card .stat-label { font-size: 0.6rem; }
+
+      .settings-card {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.75rem !important;
+      }
+
+      .settings-card > div:last-child {
+        flex-direction: column !important;
+      }
+
+      .settings-card input[type="datetime-local"] {
+        width: 100% !important;
+      }
+
+      .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+      }
+
+      .toolbar-actions {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      .search-input { width: 100% !important; }
+
+      .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+      table { min-width: 500px; }
+      thead th, tbody td { padding: 10px 12px; font-size: 0.8rem; }
+      thead th.check-col { width: 32px; }
+
+      .back-link span { display: none; }
+
+      .login-card { padding: 1.5rem; }
+    }
+
+    @media (max-width: 400px) {
+      .stats { grid-template-columns: 1fr; }
+      .stat-card { display: flex; align-items: center; justify-content: space-between; }
+      .stat-card .stat-label { margin-bottom: 0; }
+
+      .topbar .logo .accent { font-size: 1.1rem; }
+      .topbar .logo > span:nth-child(2) { display: none; }
+
+      .btn { padding: 8px 12px; font-size: 0.75rem; }
     }
   </style>
 </head>
@@ -729,7 +781,7 @@
     <div style="display:flex;align-items:center;gap:12px;">
       <a href="index.html" class="back-link">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-        Back to site
+        <span>Back to site</span>
       </a>
       <button class="logout-btn" onclick="logout()">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
