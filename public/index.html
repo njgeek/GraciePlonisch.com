@@ -53,6 +53,7 @@
     html, body {
       height: 100%;
       overflow: hidden;
+      cursor: none;
     }
 
     body {
@@ -63,6 +64,58 @@
       align-items: center;
       justify-content: center;
       position: relative;
+    }
+
+    /* Custom cursor */
+    .cursor {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 20px;
+      height: 20px;
+      border: 1.5px solid var(--accent-2);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transition: width 0.3s, height 0.3s, border-color 0.3s, background 0.3s;
+      transform: translate(-50%, -50%);
+      mix-blend-mode: difference;
+    }
+
+    .cursor-dot {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 5px;
+      height: 5px;
+      background: var(--accent-2);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 10000;
+      transform: translate(-50%, -50%);
+    }
+
+    .cursor.hovering {
+      width: 50px;
+      height: 50px;
+      border-color: var(--accent-3);
+      background: rgba(108, 99, 255, 0.1);
+    }
+
+    /* Cursor glow trail canvas */
+    #cursorTrail {
+      position: fixed;
+      inset: 0;
+      z-index: 9998;
+      pointer-events: none;
+    }
+
+    /* Constellation canvas */
+    #constellation {
+      position: fixed;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
     }
 
     /* Animated gradient mesh background */
@@ -178,31 +231,6 @@
       100% { background-position: 0 100vh; }
     }
 
-    /* Floating particles */
-    .particles {
-      position: fixed;
-      inset: 0;
-      z-index: 1;
-      pointer-events: none;
-    }
-
-    .particle {
-      position: absolute;
-      width: 2px;
-      height: 2px;
-      background: var(--accent-2);
-      border-radius: 50%;
-      opacity: 0;
-      animation: particleFloat linear infinite;
-    }
-
-    @keyframes particleFloat {
-      0% { opacity: 0; transform: translateY(100vh) scale(0); }
-      10% { opacity: 1; }
-      90% { opacity: 1; }
-      100% { opacity: 0; transform: translateY(-10vh) scale(1); }
-    }
-
     /* Main content */
     .content {
       position: relative;
@@ -268,6 +296,7 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
+      position: relative;
     }
 
     .name .last {
@@ -278,6 +307,106 @@
       -webkit-text-fill-color: transparent;
       background-clip: text;
       animation: gradientShift 5s ease-in-out infinite;
+      position: relative;
+    }
+
+    /* Glitch effect */
+    .name.glitch .first,
+    .name.glitch .last {
+      animation: none;
+    }
+
+    .name.glitch {
+      animation: glitchSkew 0.5s linear;
+    }
+
+    .name.glitch .first::before,
+    .name.glitch .first::after,
+    .name.glitch .last::before,
+    .name.glitch .last::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .name.glitch .first::before {
+      background: linear-gradient(135deg, #ffffff 0%, #c0c0d0 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      animation: glitchTop 0.5s linear;
+      clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
+    }
+
+    .name.glitch .first::after {
+      background: linear-gradient(135deg, var(--accent-2) 0%, #ffffff 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      animation: glitchBottom 0.5s linear;
+      clip-path: polygon(0 55%, 100% 55%, 100% 100%, 0 100%);
+    }
+
+    .name.glitch .last::before {
+      background: linear-gradient(135deg, var(--accent-3) 0%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      animation: glitchTop 0.5s linear;
+      clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
+    }
+
+    .name.glitch .last::after {
+      background: linear-gradient(135deg, var(--accent-2) 0%, var(--accent-3) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      animation: glitchBottom 0.5s linear;
+      clip-path: polygon(0 55%, 100% 55%, 100% 100%, 0 100%);
+    }
+
+    @keyframes glitchSkew {
+      0% { transform: skew(0deg); }
+      10% { transform: skew(-2deg); }
+      20% { transform: skew(3deg); }
+      30% { transform: skew(-1deg); }
+      40% { transform: skew(2deg); }
+      50% { transform: skew(-3deg); }
+      60% { transform: skew(1deg); }
+      70% { transform: skew(-2deg); }
+      80% { transform: skew(3deg); }
+      90% { transform: skew(-1deg); }
+      100% { transform: skew(0deg); }
+    }
+
+    @keyframes glitchTop {
+      0% { transform: translate(0); }
+      10% { transform: translate(-3px, -2px); }
+      20% { transform: translate(3px, 2px); }
+      30% { transform: translate(-2px, -1px); }
+      40% { transform: translate(2px, 1px); }
+      50% { transform: translate(-3px, 2px); }
+      60% { transform: translate(3px, -2px); }
+      70% { transform: translate(-1px, 1px); }
+      80% { transform: translate(2px, -1px); }
+      90% { transform: translate(-2px, 2px); }
+      100% { transform: translate(0); }
+    }
+
+    @keyframes glitchBottom {
+      0% { transform: translate(0); }
+      10% { transform: translate(3px, 1px); }
+      20% { transform: translate(-3px, -1px); }
+      30% { transform: translate(2px, 2px); }
+      40% { transform: translate(-2px, -2px); }
+      50% { transform: translate(3px, -1px); }
+      60% { transform: translate(-3px, 1px); }
+      70% { transform: translate(1px, -2px); }
+      80% { transform: translate(-2px, 1px); }
+      90% { transform: translate(2px, -1px); }
+      100% { transform: translate(0); }
     }
 
     @keyframes gradientShift {
@@ -326,7 +455,7 @@
       animation: fadeInUp 1s ease-out 1s both;
     }
 
-    /* Glass card */
+    /* Glass card with 3D tilt */
     .glass-card {
       display: inline-flex;
       align-items: center;
@@ -337,6 +466,21 @@
       border: 1px solid var(--glass-border);
       backdrop-filter: blur(30px);
       animation: fadeInUp 1s ease-out 1.3s both;
+      transition: transform 0.1s ease, box-shadow 0.3s ease;
+      transform-style: preserve-3d;
+      perspective: 1000px;
+    }
+
+    .glass-card:hover {
+      box-shadow: 0 25px 50px rgba(108, 99, 255, 0.15);
+    }
+
+    .glass-card .tilt-shine {
+      position: absolute;
+      inset: 0;
+      border-radius: 20px;
+      background: radial-gradient(circle at var(--shine-x, 50%) var(--shine-y, 50%), rgba(255,255,255,0.06), transparent 60%);
+      pointer-events: none;
     }
 
     .countdown-group {
@@ -367,10 +511,15 @@
       background: var(--glass-border);
     }
 
-    /* Bottom CTA */
+    /* Magnetic button */
     .notify-section {
       margin-top: 3rem;
       animation: fadeInUp 1s ease-out 1.6s both;
+    }
+
+    .magnetic-wrap {
+      display: inline-block;
+      position: relative;
     }
 
     .notify-btn {
@@ -387,8 +536,8 @@
       font-size: 0.9rem;
       font-weight: 500;
       letter-spacing: 0.05em;
-      cursor: pointer;
-      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: none;
+      transition: box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
       overflow: hidden;
     }
 
@@ -402,8 +551,7 @@
     }
 
     .notify-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 20px 40px rgba(108, 99, 255, 0.3);
+      box-shadow: 0 20px 40px rgba(108, 99, 255, 0.4);
     }
 
     .notify-btn:hover::before {
@@ -480,6 +628,28 @@
       background: var(--glass-border);
     }
 
+    /* Graduation cap on name */
+    .name {
+      position: relative;
+    }
+
+    .grad-cap {
+      position: absolute;
+      top: -35px;
+      right: 5%;
+      width: clamp(40px, 6vw, 70px);
+      height: auto;
+      animation: fadeInDown 1s ease-out 0.8s both, capBob 3s ease-in-out infinite;
+      filter: drop-shadow(0 4px 15px rgba(108, 99, 255, 0.4));
+      transform-origin: center bottom;
+      z-index: 11;
+    }
+
+    @keyframes capBob {
+      0%, 100% { transform: translateY(0) rotate(-12deg); }
+      50% { transform: translateY(-6px) rotate(-8deg); }
+    }
+
     /* Modal overlay */
     .modal-overlay {
       position: fixed;
@@ -510,6 +680,7 @@
       transform: translateY(20px) scale(0.95);
       transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
       position: relative;
+      cursor: auto;
     }
 
     .modal-overlay.active .modal {
@@ -581,6 +752,7 @@
       font-size: 0.9rem;
       outline: none;
       transition: border-color 0.3s ease, box-shadow 0.3s ease;
+      cursor: auto;
     }
 
     .form-group input::placeholder {
@@ -682,10 +854,29 @@
       }
 
       .corner { display: none; }
+
+      /* Disable custom cursor on touch devices */
+      html, body { cursor: auto; }
+      .cursor, .cursor-dot, #cursorTrail { display: none; }
+      .notify-btn { cursor: pointer; }
+    }
+
+    @media (hover: none) {
+      html, body { cursor: auto; }
+      .cursor, .cursor-dot, #cursorTrail { display: none; }
+      .notify-btn { cursor: pointer; }
     }
   </style>
 </head>
 <body>
+
+  <!-- Custom cursor -->
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-dot" id="cursorDot"></div>
+  <canvas id="cursorTrail"></canvas>
+
+  <!-- Constellation canvas -->
+  <canvas id="constellation"></canvas>
 
   <!-- Background layers -->
   <div class="gradient-mesh">
@@ -698,9 +889,6 @@
   <div class="noise"></div>
   <div class="scanline"></div>
 
-  <!-- Particles -->
-  <div class="particles" id="particles"></div>
-
   <!-- Corner accents -->
   <div class="corner corner--tl"></div>
   <div class="corner corner--br"></div>
@@ -712,16 +900,44 @@
       <span>Coming Soon</span>
     </div>
 
-    <h1 class="name">
-      <span class="first">Gracie</span>
-      <span class="last">Plonisch</span>
+    <h1 class="name" id="nameHeading">
+      <svg class="grad-cap" viewBox="0 0 120 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Cap board (mortarboard) -->
+        <polygon points="60,8 115,30 60,52 5,30" fill="url(#capGrad)" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+        <!-- Cap base / skull part -->
+        <ellipse cx="60" cy="42" rx="28" ry="10" fill="#1a1a2e"/>
+        <rect x="32" y="42" width="56" height="18" rx="2" fill="#1a1a2e"/>
+        <ellipse cx="60" cy="60" rx="28" ry="8" fill="#12122a"/>
+        <!-- Button on top -->
+        <circle cx="60" cy="30" r="3" fill="#00d4ff"/>
+        <!-- Tassel -->
+        <line x1="60" y1="30" x2="95" y2="30" stroke="#FFD700" stroke-width="2"/>
+        <line x1="95" y1="30" x2="98" y2="65" stroke="#FFD700" stroke-width="2"/>
+        <rect x="93" y="62" width="10" height="12" rx="2" fill="#FFD700" opacity="0.9"/>
+        <!-- Tassel strands -->
+        <line x1="94" y1="74" x2="93" y2="85" stroke="#FFD700" stroke-width="1.5" opacity="0.8"/>
+        <line x1="96" y1="74" x2="96" y2="86" stroke="#FFD700" stroke-width="1.5" opacity="0.8"/>
+        <line x1="98" y1="74" x2="97" y2="85" stroke="#FFD700" stroke-width="1.5" opacity="0.8"/>
+        <line x1="100" y1="74" x2="101" y2="84" stroke="#FFD700" stroke-width="1.5" opacity="0.8"/>
+        <line x1="102" y1="74" x2="103" y2="85" stroke="#FFD700" stroke-width="1.5" opacity="0.8"/>
+        <defs>
+          <linearGradient id="capGrad" x1="5" y1="30" x2="115" y2="30">
+            <stop offset="0%" style="stop-color:#6c63ff"/>
+            <stop offset="50%" style="stop-color:#00d4ff"/>
+            <stop offset="100%" style="stop-color:#ff6cf0"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <span class="first" data-text="Gracie">Gracie</span>
+      <span class="last" data-text="Plonisch">Plonisch</span>
     </h1>
 
     <div class="divider"></div>
 
     <p class="tagline">Something extraordinary is in the works. Stay tuned for the reveal.</p>
 
-    <div class="glass-card">
+    <div class="glass-card" id="glassCard">
+      <div class="tilt-shine"></div>
       <div class="countdown-group">
         <div class="number" id="days">00</div>
         <div class="label">Days</div>
@@ -744,12 +960,14 @@
     </div>
 
     <div class="notify-section">
-      <button class="notify-btn" onclick="openModal()">
-        <span>Get Notified</span>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M5 12h14M12 5l7 7-7 7"/>
-        </svg>
-      </button>
+      <div class="magnetic-wrap" id="magneticWrap">
+        <button class="notify-btn" id="notifyBtn" onclick="openModal()">
+          <span>Get Notified</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -794,7 +1012,248 @@
   </div>
 
   <script>
-    // Countdown — 30 days from now
+    // ==========================================
+    // 1. CUSTOM CURSOR WITH GLOW TRAIL
+    // ==========================================
+    const cursor = document.getElementById('cursor');
+    const cursorDot = document.getElementById('cursorDot');
+    const trailCanvas = document.getElementById('cursorTrail');
+    const trailCtx = trailCanvas.getContext('2d');
+
+    let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
+    let cursorX = mouseX, cursorY = mouseY;
+    const trail = [];
+
+    function resizeTrailCanvas() {
+      trailCanvas.width = window.innerWidth;
+      trailCanvas.height = window.innerHeight;
+    }
+    resizeTrailCanvas();
+    window.addEventListener('resize', resizeTrailCanvas);
+
+    document.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      trail.push({ x: mouseX, y: mouseY, age: 0 });
+      if (trail.length > 50) trail.shift();
+    });
+
+    // Hover detection for interactive elements
+    const hoverTargets = 'a, button, input, .notify-btn, .modal-close';
+    document.addEventListener('mouseover', (e) => {
+      if (e.target.closest(hoverTargets)) cursor.classList.add('hovering');
+    });
+    document.addEventListener('mouseout', (e) => {
+      if (e.target.closest(hoverTargets)) cursor.classList.remove('hovering');
+    });
+
+    function animateCursor() {
+      // Smooth follow
+      cursorX += (mouseX - cursorX) * 0.15;
+      cursorY += (mouseY - cursorY) * 0.15;
+
+      cursor.style.left = cursorX + 'px';
+      cursor.style.top = cursorY + 'px';
+      cursorDot.style.left = mouseX + 'px';
+      cursorDot.style.top = mouseY + 'px';
+
+      // Draw trail
+      trailCtx.clearRect(0, 0, trailCanvas.width, trailCanvas.height);
+      for (let i = trail.length - 1; i >= 0; i--) {
+        trail[i].age++;
+        if (trail[i].age > 30) { trail.splice(i, 1); continue; }
+        const alpha = (1 - trail[i].age / 30) * 0.3;
+        const radius = (1 - trail[i].age / 30) * 4;
+        trailCtx.beginPath();
+        trailCtx.arc(trail[i].x, trail[i].y, radius, 0, Math.PI * 2);
+        trailCtx.fillStyle = `rgba(0, 212, 255, ${alpha})`;
+        trailCtx.fill();
+      }
+
+      requestAnimationFrame(animateCursor);
+    }
+    animateCursor();
+
+    // ==========================================
+    // 2. INTERACTIVE CONSTELLATION PARTICLES
+    // ==========================================
+    const constCanvas = document.getElementById('constellation');
+    const constCtx = constCanvas.getContext('2d');
+    const particles = [];
+    const PARTICLE_COUNT = 80;
+    const CONNECTION_DIST = 150;
+    const MOUSE_RADIUS = 200;
+
+    function resizeConstellation() {
+      constCanvas.width = window.innerWidth;
+      constCanvas.height = window.innerHeight;
+    }
+    resizeConstellation();
+    window.addEventListener('resize', resizeConstellation);
+
+    const colors = ['#6c63ff', '#00d4ff', '#ff6cf0', '#00ffa3'];
+
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: (Math.random() - 0.5) * 0.5,
+        radius: Math.random() * 2 + 0.5,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      });
+    }
+
+    function animateConstellation() {
+      constCtx.clearRect(0, 0, constCanvas.width, constCanvas.height);
+
+      particles.forEach(p => {
+        // Move
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // Bounce off edges
+        if (p.x < 0 || p.x > constCanvas.width) p.vx *= -1;
+        if (p.y < 0 || p.y > constCanvas.height) p.vy *= -1;
+
+        // Mouse attraction
+        const dx = mouseX - p.x;
+        const dy = mouseY - p.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < MOUSE_RADIUS) {
+          const force = (MOUSE_RADIUS - dist) / MOUSE_RADIUS * 0.02;
+          p.vx += dx * force;
+          p.vy += dy * force;
+        }
+
+        // Dampen velocity
+        p.vx *= 0.99;
+        p.vy *= 0.99;
+
+        // Draw particle
+        constCtx.beginPath();
+        constCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        constCtx.fillStyle = p.color;
+        constCtx.globalAlpha = 0.6;
+        constCtx.fill();
+      });
+
+      // Draw connections
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < CONNECTION_DIST) {
+            constCtx.beginPath();
+            constCtx.moveTo(particles[i].x, particles[i].y);
+            constCtx.lineTo(particles[j].x, particles[j].y);
+            constCtx.strokeStyle = `rgba(108, 99, 255, ${(1 - dist / CONNECTION_DIST) * 0.15})`;
+            constCtx.lineWidth = 0.5;
+            constCtx.globalAlpha = 1;
+            constCtx.stroke();
+          }
+        }
+
+        // Connect to mouse
+        const dx = mouseX - particles[i].x;
+        const dy = mouseY - particles[i].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < MOUSE_RADIUS) {
+          constCtx.beginPath();
+          constCtx.moveTo(particles[i].x, particles[i].y);
+          constCtx.lineTo(mouseX, mouseY);
+          constCtx.strokeStyle = `rgba(0, 212, 255, ${(1 - dist / MOUSE_RADIUS) * 0.25})`;
+          constCtx.lineWidth = 0.5;
+          constCtx.globalAlpha = 1;
+          constCtx.stroke();
+        }
+      }
+
+      requestAnimationFrame(animateConstellation);
+    }
+    animateConstellation();
+
+    // ==========================================
+    // 3. 3D TILT ON GLASS CARD
+    // ==========================================
+    const glassCard = document.getElementById('glassCard');
+
+    document.addEventListener('mousemove', (e) => {
+      const rect = glassCard.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const dx = e.clientX - centerX;
+      const dy = e.clientY - centerY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist < 400) {
+        const tiltX = (dy / 400) * -10;
+        const tiltY = (dx / 400) * 10;
+        const intensity = 1 - dist / 400;
+        glassCard.style.transform = `perspective(1000px) rotateX(${tiltX * intensity}deg) rotateY(${tiltY * intensity}deg) scale(${1 + intensity * 0.02})`;
+
+        // Shine effect
+        const shineX = ((e.clientX - rect.left) / rect.width) * 100;
+        const shineY = ((e.clientY - rect.top) / rect.height) * 100;
+        glassCard.style.setProperty('--shine-x', shineX + '%');
+        glassCard.style.setProperty('--shine-y', shineY + '%');
+      } else {
+        glassCard.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)';
+      }
+    });
+
+    // ==========================================
+    // 4. MAGNETIC BUTTON
+    // ==========================================
+    const magneticWrap = document.getElementById('magneticWrap');
+    const notifyBtn = document.getElementById('notifyBtn');
+
+    document.addEventListener('mousemove', (e) => {
+      const rect = magneticWrap.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const dx = e.clientX - centerX;
+      const dy = e.clientY - centerY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist < 150) {
+        const pull = (150 - dist) / 150;
+        const moveX = dx * pull * 0.4;
+        const moveY = dy * pull * 0.4;
+        notifyBtn.style.transform = `translate(${moveX}px, ${moveY}px)`;
+      } else {
+        notifyBtn.style.transform = 'translate(0, 0)';
+      }
+    });
+
+    // ==========================================
+    // 5. GLITCH EFFECT ON NAME
+    // ==========================================
+    const nameHeading = document.getElementById('nameHeading');
+
+    function triggerGlitch() {
+      nameHeading.classList.add('glitch');
+      setTimeout(() => nameHeading.classList.remove('glitch'), 500);
+    }
+
+    // Random glitch every 4-10 seconds
+    function scheduleGlitch() {
+      const delay = 4000 + Math.random() * 6000;
+      setTimeout(() => {
+        triggerGlitch();
+        scheduleGlitch();
+      }, delay);
+    }
+    scheduleGlitch();
+
+    // Also glitch on hover
+    nameHeading.addEventListener('mouseenter', triggerGlitch);
+
+    // ==========================================
+    // 6. COUNTDOWN
+    // ==========================================
     const launchDate = new Date();
     launchDate.setDate(launchDate.getDate() + 30);
 
@@ -816,24 +1275,9 @@
     updateCountdown();
     setInterval(updateCountdown, 1000);
 
-    // Generate floating particles
-    const particlesContainer = document.getElementById('particles');
-    for (let i = 0; i < 40; i++) {
-      const particle = document.createElement('div');
-      particle.className = 'particle';
-      particle.style.left = Math.random() * 100 + '%';
-      particle.style.animationDuration = (Math.random() * 15 + 10) + 's';
-      particle.style.animationDelay = (Math.random() * 20) + 's';
-      particle.style.width = (Math.random() * 3 + 1) + 'px';
-      particle.style.height = particle.style.width;
-
-      const colors = ['#6c63ff', '#00d4ff', '#ff6cf0', '#00ffa3'];
-      particle.style.background = colors[Math.floor(Math.random() * colors.length)];
-
-      particlesContainer.appendChild(particle);
-    }
-
-    // Modal functions
+    // ==========================================
+    // 8. MODAL
+    // ==========================================
     function openModal() {
       document.getElementById('modalOverlay').classList.add('active');
       document.getElementById('formView').style.display = 'block';
@@ -869,7 +1313,9 @@
       }
     }
 
-    // Subtle mouse parallax on orbs
+    // ==========================================
+    // 9. ORB PARALLAX
+    // ==========================================
     document.addEventListener('mousemove', (e) => {
       const x = (e.clientX / window.innerWidth - 0.5) * 2;
       const y = (e.clientY / window.innerHeight - 0.5) * 2;
