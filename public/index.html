@@ -854,17 +854,14 @@
       }
 
       .corner { display: none; }
-
-      /* Disable custom cursor on touch devices */
-      html, body { cursor: auto; }
-      .cursor, .cursor-dot, #cursorTrail { display: none; }
-      .notify-btn { cursor: pointer; }
     }
 
+    /* Touch devices: hide custom cursor but keep everything else */
     @media (hover: none) {
       html, body { cursor: auto; }
       .cursor, .cursor-dot, #cursorTrail { display: none; }
       .notify-btn { cursor: pointer; }
+      .modal, .modal-close, .submit-btn, .form-group input { cursor: auto; }
     }
   </style>
 </head>
@@ -1013,14 +1010,35 @@
 
   <script>
     // ==========================================
-    // 1. CUSTOM CURSOR WITH GLOW TRAIL
+    // DETECT TOUCH DEVICE
+    // ==========================================
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
+    let isTouching = false;
+
+    // Unified pointer handler
+    function updatePointer(x, y) {
+      mouseX = x;
+      mouseY = y;
+    }
+
+    document.addEventListener('mousemove', (e) => updatePointer(e.clientX, e.clientY));
+    document.addEventListener('touchstart', (e) => {
+      isTouching = true;
+      updatePointer(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+    document.addEventListener('touchmove', (e) => {
+      updatePointer(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+    document.addEventListener('touchend', () => { isTouching = false; }, { passive: true });
+
+    // ==========================================
+    // 1. CUSTOM CURSOR WITH GLOW TRAIL (desktop only)
     // ==========================================
     const cursor = document.getElementById('cursor');
     const cursorDot = document.getElementById('cursorDot');
     const trailCanvas = document.getElementById('cursorTrail');
     const trailCtx = trailCanvas.getContext('2d');
-
-    let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
     let cursorX = mouseX, cursorY = mouseY;
     const trail = [];
 
@@ -1031,24 +1049,24 @@
     resizeTrailCanvas();
     window.addEventListener('resize', resizeTrailCanvas);
 
-    document.addEventListener('mousemove', (e) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
-      trail.push({ x: mouseX, y: mouseY, age: 0 });
-      if (trail.length > 50) trail.shift();
-    });
+    if (!isTouchDevice) {
+      document.addEventListener('mousemove', (e) => {
+        trail.push({ x: e.clientX, y: e.clientY, age: 0 });
+        if (trail.length > 50) trail.shift();
+      });
 
-    // Hover detection for interactive elements
-    const hoverTargets = 'a, button, input, .notify-btn, .modal-close';
-    document.addEventListener('mouseover', (e) => {
-      if (e.target.closest(hoverTargets)) cursor.classList.add('hovering');
-    });
-    document.addEventListener('mouseout', (e) => {
-      if (e.target.closest(hoverTargets)) cursor.classList.remove('hovering');
-    });
+      const hoverTargets = 'a, button, input, .notify-btn, .modal-close';
+      document.addEventListener('mouseover', (e) => {
+        if (e.target.closest(hoverTargets)) cursor.classList.add('hovering');
+      });
+      document.addEventListener('mouseout', (e) => {
+        if (e.target.closest(hoverTargets)) cursor.classList.remove('hovering');
+      });
+    }
 
     function animateCursor() {
-      // Smooth follow
+      if (isTouchDevice) return;
+
       cursorX += (mouseX - cursorX) * 0.15;
       cursorY += (mouseY - cursorY) * 0.15;
 
@@ -1057,7 +1075,6 @@
       cursorDot.style.left = mouseX + 'px';
       cursorDot.style.top = mouseY + 'px';
 
-      // Draw trail
       trailCtx.clearRect(0, 0, trailCanvas.width, trailCanvas.height);
       for (let i = trail.length - 1; i >= 0; i--) {
         trail[i].age++;
@@ -1072,7 +1089,7 @@
 
       requestAnimationFrame(animateCursor);
     }
-    animateCursor();
+    if (!isTouchDevice) animateCursor();
 
     // ==========================================
     // 2. INTERACTIVE CONSTELLATION PARTICLES
@@ -1080,9 +1097,9 @@
     const constCanvas = document.getElementById('constellation');
     const constCtx = constCanvas.getContext('2d');
     const particles = [];
-    const PARTICLE_COUNT = 80;
-    const CONNECTION_DIST = 150;
-    const MOUSE_RADIUS = 200;
+    const PARTICLE_COUNT = isTouchDevice ? 45 : 80;
+    const CONNECTION_DIST = isTouchDevice ? 120 : 150;
+    const MOUSE_RADIUS = isTouchDevice ? 150 : 200;
 
     function resizeConstellation() {
       constCanvas.width = window.innerWidth;
@@ -1107,30 +1124,30 @@
     function animateConstellation() {
       constCtx.clearRect(0, 0, constCanvas.width, constCanvas.height);
 
+      const shouldAttract = isTouchDevice ? isTouching : true;
+
       particles.forEach(p => {
-        // Move
         p.x += p.vx;
         p.y += p.vy;
 
-        // Bounce off edges
         if (p.x < 0 || p.x > constCanvas.width) p.vx *= -1;
         if (p.y < 0 || p.y > constCanvas.height) p.vy *= -1;
 
-        // Mouse attraction
-        const dx = mouseX - p.x;
-        const dy = mouseY - p.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < MOUSE_RADIUS) {
-          const force = (MOUSE_RADIUS - dist) / MOUSE_RADIUS * 0.02;
-          p.vx += dx * force;
-          p.vy += dy * force;
+        // Attract to pointer (mouse or touch)
+        if (shouldAttract) {
+          const dx = mouseX - p.x;
+          const dy = mouseY - p.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < MOUSE_RADIUS) {
+            const force = (MOUSE_RADIUS - dist) / MOUSE_RADIUS * 0.02;
+            p.vx += dx * force;
+            p.vy += dy * force;
+          }
         }
 
-        // Dampen velocity
         p.vx *= 0.99;
         p.vy *= 0.99;
 
-        // Draw particle
         constCtx.beginPath();
         constCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
         constCtx.fillStyle = p.color;
@@ -1138,7 +1155,7 @@
         constCtx.fill();
       });
 
-      // Draw connections
+      // Draw connections between particles
       for (let i = 0; i < particles.length; i++) {
         for (let j = i + 1; j < particles.length; j++) {
           const dx = particles[i].x - particles[j].x;
@@ -1156,18 +1173,20 @@
           }
         }
 
-        // Connect to mouse
-        const dx = mouseX - particles[i].x;
-        const dy = mouseY - particles[i].y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < MOUSE_RADIUS) {
-          constCtx.beginPath();
-          constCtx.moveTo(particles[i].x, particles[i].y);
-          constCtx.lineTo(mouseX, mouseY);
-          constCtx.strokeStyle = `rgba(0, 212, 255, ${(1 - dist / MOUSE_RADIUS) * 0.25})`;
-          constCtx.lineWidth = 0.5;
-          constCtx.globalAlpha = 1;
-          constCtx.stroke();
+        // Connect to pointer
+        if (shouldAttract) {
+          const dx = mouseX - particles[i].x;
+          const dy = mouseY - particles[i].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < MOUSE_RADIUS) {
+            constCtx.beginPath();
+            constCtx.moveTo(particles[i].x, particles[i].y);
+            constCtx.lineTo(mouseX, mouseY);
+            constCtx.strokeStyle = `rgba(0, 212, 255, ${(1 - dist / MOUSE_RADIUS) * 0.25})`;
+            constCtx.lineWidth = 0.5;
+            constCtx.globalAlpha = 1;
+            constCtx.stroke();
+          }
         }
       }
 
@@ -1180,53 +1199,59 @@
     // ==========================================
     const glassCard = document.getElementById('glassCard');
 
-    document.addEventListener('mousemove', (e) => {
+    function handleTilt(x, y) {
       const rect = glassCard.getBoundingClientRect();
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
-      const dx = e.clientX - centerX;
-      const dy = e.clientY - centerY;
+      const dx = x - centerX;
+      const dy = y - centerY;
       const dist = Math.sqrt(dx * dx + dy * dy);
+      const range = isTouchDevice ? 300 : 400;
 
-      if (dist < 400) {
-        const tiltX = (dy / 400) * -10;
-        const tiltY = (dx / 400) * 10;
-        const intensity = 1 - dist / 400;
+      if (dist < range) {
+        const tiltX = (dy / range) * -10;
+        const tiltY = (dx / range) * 10;
+        const intensity = 1 - dist / range;
         glassCard.style.transform = `perspective(1000px) rotateX(${tiltX * intensity}deg) rotateY(${tiltY * intensity}deg) scale(${1 + intensity * 0.02})`;
 
-        // Shine effect
-        const shineX = ((e.clientX - rect.left) / rect.width) * 100;
-        const shineY = ((e.clientY - rect.top) / rect.height) * 100;
+        const shineX = ((x - rect.left) / rect.width) * 100;
+        const shineY = ((y - rect.top) / rect.height) * 100;
         glassCard.style.setProperty('--shine-x', shineX + '%');
         glassCard.style.setProperty('--shine-y', shineY + '%');
       } else {
         glassCard.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)';
       }
+    }
+
+    document.addEventListener('mousemove', (e) => handleTilt(e.clientX, e.clientY));
+    document.addEventListener('touchmove', (e) => handleTilt(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+    document.addEventListener('touchend', () => {
+      glassCard.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)';
     });
 
     // ==========================================
-    // 4. MAGNETIC BUTTON
+    // 4. MAGNETIC BUTTON (desktop only — would interfere with tap on mobile)
     // ==========================================
-    const magneticWrap = document.getElementById('magneticWrap');
     const notifyBtn = document.getElementById('notifyBtn');
 
-    document.addEventListener('mousemove', (e) => {
-      const rect = magneticWrap.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-      const dx = e.clientX - centerX;
-      const dy = e.clientY - centerY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
+    if (!isTouchDevice) {
+      const magneticWrap = document.getElementById('magneticWrap');
+      document.addEventListener('mousemove', (e) => {
+        const rect = magneticWrap.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const dx = e.clientX - centerX;
+        const dy = e.clientY - centerY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
 
-      if (dist < 150) {
-        const pull = (150 - dist) / 150;
-        const moveX = dx * pull * 0.4;
-        const moveY = dy * pull * 0.4;
-        notifyBtn.style.transform = `translate(${moveX}px, ${moveY}px)`;
-      } else {
-        notifyBtn.style.transform = 'translate(0, 0)';
-      }
-    });
+        if (dist < 150) {
+          const pull = (150 - dist) / 150;
+          notifyBtn.style.transform = `translate(${dx * pull * 0.4}px, ${dy * pull * 0.4}px)`;
+        } else {
+          notifyBtn.style.transform = 'translate(0, 0)';
+        }
+      });
+    }
 
     // ==========================================
     // 5. GLITCH EFFECT ON NAME
@@ -1238,7 +1263,6 @@
       setTimeout(() => nameHeading.classList.remove('glitch'), 500);
     }
 
-    // Random glitch every 4-10 seconds
     function scheduleGlitch() {
       const delay = 4000 + Math.random() * 6000;
       setTimeout(() => {
@@ -1248,8 +1272,9 @@
     }
     scheduleGlitch();
 
-    // Also glitch on hover
+    // Glitch on hover (desktop) or tap (mobile)
     nameHeading.addEventListener('mouseenter', triggerGlitch);
+    nameHeading.addEventListener('touchstart', triggerGlitch, { passive: true });
 
     // ==========================================
     // 6. COUNTDOWN
@@ -1276,7 +1301,7 @@
     setInterval(updateCountdown, 1000);
 
     // ==========================================
-    // 8. MODAL
+    // 7. MODAL
     // ==========================================
     function openModal() {
       document.getElementById('modalOverlay').classList.add('active');
@@ -1314,18 +1339,36 @@
     }
 
     // ==========================================
-    // 9. ORB PARALLAX
+    // 8. ORB PARALLAX
     // ==========================================
-    document.addEventListener('mousemove', (e) => {
-      const x = (e.clientX / window.innerWidth - 0.5) * 2;
-      const y = (e.clientY / window.innerHeight - 0.5) * 2;
-
+    function handleOrbParallax(x, y) {
+      const px = (x / window.innerWidth - 0.5) * 2;
+      const py = (y / window.innerHeight - 0.5) * 2;
       const orbs = document.querySelectorAll('.orb');
       orbs.forEach((orb, i) => {
-        const speed = (i + 1) * 8;
-        orb.style.transform = `translate(${x * speed}px, ${y * speed}px)`;
+        const speed = (i + 1) * (isTouchDevice ? 4 : 8);
+        orb.style.transform = `translate(${px * speed}px, ${py * speed}px)`;
       });
-    });
+    }
+
+    document.addEventListener('mousemove', (e) => handleOrbParallax(e.clientX, e.clientY));
+    document.addEventListener('touchmove', (e) => handleOrbParallax(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+
+    // ==========================================
+    // 9. DEVICE MOTION PARALLAX (gyroscope on mobile)
+    // ==========================================
+    if (isTouchDevice && window.DeviceOrientationEvent) {
+      window.addEventListener('deviceorientation', (e) => {
+        if (e.gamma === null) return;
+        const tiltX = (e.gamma / 45); // left-right tilt, -1 to 1
+        const tiltY = ((e.beta - 45) / 45); // front-back tilt, -1 to 1
+        const orbs = document.querySelectorAll('.orb');
+        orbs.forEach((orb, i) => {
+          const speed = (i + 1) * 6;
+          orb.style.transform = `translate(${tiltX * speed}px, ${tiltY * speed}px)`;
+        });
+      }, { passive: true });
+    }
   </script>
 </body>
 </html>
