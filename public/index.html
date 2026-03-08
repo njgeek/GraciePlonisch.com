@@ -89,6 +89,7 @@
       transition: width 0.3s, height 0.3s, border-color 0.3s, background 0.3s;
       transform: translate(-50%, -50%);
       mix-blend-mode: difference;
+      opacity: 0;
     }
 
     .cursor-dot {
@@ -102,6 +103,7 @@
       pointer-events: none;
       z-index: 10000;
       transform: translate(-50%, -50%);
+      opacity: 0;
     }
 
     .cursor.hovering {
@@ -1059,7 +1061,13 @@
     window.addEventListener('resize', resizeTrailCanvas);
 
     if (!isTouchDevice) {
+      let cursorVisible = false;
       document.addEventListener('mousemove', (e) => {
+        if (!cursorVisible) {
+          cursor.style.opacity = '1';
+          cursorDot.style.opacity = '1';
+          cursorVisible = true;
+        }
         trail.push({ x: e.clientX, y: e.clientY, age: 0 });
         if (trail.length > 50) trail.shift();
       });
