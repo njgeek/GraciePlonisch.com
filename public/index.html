@@ -64,10 +64,6 @@
       overflow: hidden;
     }
 
-    html.cursor-ready, html.cursor-ready body {
-      cursor: none;
-    }
-
     body {
       background: var(--bg-primary);
       color: var(--text-primary);
@@ -76,43 +72,6 @@
       align-items: center;
       justify-content: center;
       position: relative;
-    }
-
-    /* Custom cursor */
-    .cursor {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 20px;
-      height: 20px;
-      border: 1.5px solid var(--accent-2);
-      border-radius: 50%;
-      pointer-events: none;
-      z-index: 9999;
-      transition: width 0.3s, height 0.3s, border-color 0.3s, background 0.3s;
-      transform: translate(-50%, -50%);
-      opacity: 0;
-    }
-
-    .cursor-dot {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 5px;
-      height: 5px;
-      background: var(--accent-2);
-      border-radius: 50%;
-      pointer-events: none;
-      z-index: 10000;
-      transform: translate(-50%, -50%);
-      opacity: 0;
-    }
-
-    .cursor.hovering {
-      width: 50px;
-      height: 50px;
-      border-color: var(--accent-3);
-      background: rgba(108, 99, 255, 0.1);
     }
 
     /* Cursor glow trail canvas */
@@ -868,20 +827,14 @@
       .corner { display: none; }
     }
 
-    /* Touch devices: hide custom cursor but keep everything else */
+    /* Touch devices: hide trail */
     @media (hover: none) {
-      html, body { cursor: auto; }
-      .cursor, .cursor-dot, #cursorTrail { display: none; }
-      .notify-btn { cursor: pointer; }
-      .modal, .modal-close, .submit-btn, .form-group input { cursor: auto; }
+      #cursorTrail { display: none; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Custom cursor -->
-  <div class="cursor" id="cursor"></div>
-  <div class="cursor-dot" id="cursorDot"></div>
   <canvas id="cursorTrail"></canvas>
 
   <!-- Constellation canvas -->
@@ -1045,13 +998,10 @@
     document.addEventListener('touchend', () => { isTouching = false; }, { passive: true });
 
     // ==========================================
-    // 1. CUSTOM CURSOR WITH GLOW TRAIL (desktop only)
+    // 1. CURSOR GLOW TRAIL (desktop only)
     // ==========================================
-    const cursor = document.getElementById('cursor');
-    const cursorDot = document.getElementById('cursorDot');
     const trailCanvas = document.getElementById('cursorTrail');
     const trailCtx = trailCanvas.getContext('2d');
-    let cursorX = mouseX, cursorY = mouseY;
     const trail = [];
 
     function resizeTrailCanvas() {
@@ -1062,37 +1012,14 @@
     window.addEventListener('resize', resizeTrailCanvas);
 
     if (!isTouchDevice) {
-      let cursorVisible = false;
       document.addEventListener('mousemove', (e) => {
-        if (!cursorVisible) {
-          cursor.style.opacity = '1';
-          cursorDot.style.opacity = '1';
-          document.documentElement.classList.add('cursor-ready');
-          cursorVisible = true;
-        }
         trail.push({ x: e.clientX, y: e.clientY, age: 0 });
         if (trail.length > 50) trail.shift();
       });
-
-      const hoverTargets = 'a, button, input, .notify-btn, .modal-close';
-      document.addEventListener('mouseover', (e) => {
-        if (e.target.closest(hoverTargets)) cursor.classList.add('hovering');
-      });
-      document.addEventListener('mouseout', (e) => {
-        if (e.target.closest(hoverTargets)) cursor.classList.remove('hovering');
-      });
     }
 
-    function animateCursor() {
+    function animateTrail() {
       if (isTouchDevice) return;
-
-      cursorX += (mouseX - cursorX) * 0.15;
-      cursorY += (mouseY - cursorY) * 0.15;
-
-      cursor.style.left = cursorX + 'px';
-      cursor.style.top = cursorY + 'px';
-      cursorDot.style.left = mouseX + 'px';
-      cursorDot.style.top = mouseY + 'px';
 
       trailCtx.clearRect(0, 0, trailCanvas.width, trailCanvas.height);
       for (let i = trail.length - 1; i >= 0; i--) {
@@ -1106,9 +1033,9 @@
         trailCtx.fill();
       }
 
-      requestAnimationFrame(animateCursor);
+      requestAnimationFrame(animateTrail);
     }
-    if (!isTouchDevice) animateCursor();
+    if (!isTouchDevice) animateTrail();
 
     // ==========================================
     // 2. INTERACTIVE CONSTELLATION PARTICLES
