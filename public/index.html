@@ -827,8 +827,8 @@
       .corner { display: none; }
     }
 
-    /* Touch devices: hide trail */
-    @media (hover: none) {
+    /* Only hide the trail when no hover-capable pointer exists */
+    @media (any-hover: none) {
       #cursorTrail { display: none; }
     }
   </style>
@@ -975,9 +975,12 @@
 
   <script>
     // ==========================================
-    // DETECT TOUCH DEVICE
+    // DETECT INPUT CAPABILITIES
     // ==========================================
-    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    const hasFinePointer = window.matchMedia('(any-pointer: fine)').matches;
+    const canHover = window.matchMedia('(any-hover: hover)').matches;
+    const useDesktopPointer = hasFinePointer && canHover;
+    const hasTouchInput = navigator.maxTouchPoints > 0;
     let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
     let isTouching = false;
 
@@ -998,7 +1001,7 @@
     document.addEventListener('touchend', () => { isTouching = false; }, { passive: true });
 
     // ==========================================
-    // 1. CURSOR GLOW TRAIL (desktop only)
+    // 1. CURSOR GLOW TRAIL (for hover-capable pointers)
     // ==========================================
     const trailCanvas = document.getElementById('cursorTrail');
     const trailCtx = trailCanvas.getContext('2d');
@@ -1011,7 +1014,7 @@
     resizeTrailCanvas();
     window.addEventListener('resize', resizeTrailCanvas);
 
-    if (!isTouchDevice) {
+    if (useDesktopPointer) {
       document.addEventListener('mousemove', (e) => {
         trail.push({ x: e.clientX, y: e.clientY, age: 0 });
         if (trail.length > 50) trail.shift();
@@ -1019,7 +1022,7 @@
     }
 
     function animateTrail() {
-      if (isTouchDevice) return;
+      if (!useDesktopPointer) return;
 
       trailCtx.clearRect(0, 0, trailCanvas.width, trailCanvas.height);
       for (let i = trail.length - 1; i >= 0; i--) {
@@ -1035,7 +1038,7 @@
 
       requestAnimationFrame(animateTrail);
     }
-    if (!isTouchDevice) animateTrail();
+    if (useDesktopPointer) animateTrail();
 
     // ==========================================
     // 2. INTERACTIVE CONSTELLATION PARTICLES
@@ -1043,9 +1046,9 @@
     const constCanvas = document.getElementById('constellation');
     const constCtx = constCanvas.getContext('2d');
     const particles = [];
-    const PARTICLE_COUNT = isTouchDevice ? 45 : 80;
-    const CONNECTION_DIST = isTouchDevice ? 120 : 150;
-    const MOUSE_RADIUS = isTouchDevice ? 150 : 200;
+    const PARTICLE_COUNT = useDesktopPointer ? 80 : 45;
+    const CONNECTION_DIST = useDesktopPointer ? 150 : 120;
+    const MOUSE_RADIUS = useDesktopPointer ? 200 : 150;
 
     function resizeConstellation() {
       constCanvas.width = window.innerWidth;
@@ -1070,7 +1073,7 @@
     function animateConstellation() {
       constCtx.clearRect(0, 0, constCanvas.width, constCanvas.height);
 
-      const shouldAttract = isTouchDevice ? isTouching : true;
+      const shouldAttract = useDesktopPointer || isTouching;
 
       particles.forEach(p => {
         p.x += p.vx;
@@ -1152,7 +1155,7 @@
       const dx = x - centerX;
       const dy = y - centerY;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      const range = isTouchDevice ? 300 : 400;
+      const range = useDesktopPointer ? 400 : 300;
 
       if (dist < range) {
         const tiltX = (dy / range) * -10;
@@ -1176,11 +1179,11 @@
     });
 
     // ==========================================
-    // 4. MAGNETIC BUTTON (desktop only — would interfere with tap on mobile)
+    // 4. MAGNETIC BUTTON (hover pointers only)
     // ==========================================
     const notifyBtn = document.getElementById('notifyBtn');
 
-    if (!isTouchDevice) {
+    if (useDesktopPointer) {
       const magneticWrap = document.getElementById('magneticWrap');
       document.addEventListener('mousemove', (e) => {
         const rect = magneticWrap.getBoundingClientRect();
@@ -1211,7 +1214,7 @@
 
     // Glitch on hover (desktop) or tap anywhere (mobile, once)
     nameHeading.addEventListener('mouseenter', triggerGlitch);
-    if (isTouchDevice) {
+    if (!useDesktopPointer && hasTouchInput) {
       document.addEventListener('touchstart', () => triggerGlitch(), { passive: true, once: true });
     }
 
@@ -1301,7 +1304,7 @@
       const py = (y / window.innerHeight - 0.5) * 2;
       const orbs = document.querySelectorAll('.orb');
       orbs.forEach((orb, i) => {
-        const speed = (i + 1) * (isTouchDevice ? 4 : 8);
+        const speed = (i + 1) * (useDesktopPointer ? 8 : 4);
         orb.style.transform = `translate(${px * speed}px, ${py * speed}px)`;
       });
     }
@@ -1312,7 +1315,7 @@
     // ==========================================
     // 9. DEVICE MOTION PARALLAX (gyroscope on mobile)
     // ==========================================
-    if (isTouchDevice && window.DeviceOrientationEvent) {
+    if (!useDesktopPointer && hasTouchInput && window.DeviceOrientationEvent) {
       window.addEventListener('deviceorientation', (e) => {
         if (e.gamma === null) return;
         const tiltX = (e.gamma / 45); // left-right tilt, -1 to 1
